@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!--
+      create container for SVG with svg element;
+      order of elements is only defined by order of appearance
+    -->
+    <svg width="500" height="500">
+      <!--
+        create a rectangle shape
+        fill: background color of shape
+        stroke: border color
+        stroke-width: border width
+        specific for strokes: half stroke width is inside element, and half outside
+        by default svg is set to overflow: hidden
+        solution:
+          1) svg -> overflow: visible;
+          2) position rect with x and y attributes, standing for coordinates inside svg container
+      -->
+      <rect x="25" y="25" width="100" height="100" fill="#f44336" stroke="#8bc34a" stroke-width="10"></rect>
+
+      <!--
+        create a circle shape
+        r: radius
+        cx: coordinate on x axis inside svg to position circle
+        cy: coordinate on y axis inside svg to position circle
+      -->
+      <circle r="100" cx="250" cy="150" fill="#9c28b0"></circle>
+
+      <!--
+        create a line shape
+        x1, y1: starting coordinates
+        x2, y2: ending coordinates
+        fill: lines do NOT have fill color, only stroke
+      -->
+      <line x1="100" y1="100" x2="200" y2="200" stroke="blue" stroke-width="5"></line>
+
+      <!--
+        Article: https://www.mediaevent.de/tutorial/svg-path.html
+        most powerful shape because it can be conformed to draw every shape
+        d (short for data): list of commands and coordinates
+        M, m move to point:	instructs SVG to move the "pen" to certain coordinates (by default "pen" starts at 0,0)
+        Z, z close path: at the end of list of coordinates closes the path to a shape
+        L, l draw line to: großes L = gehe absolutem Punkt x/y; kleines l = relativer path, gehe x/y Einheiten
+        C, c und S, s: Cubic Bézierkurve
+        Q, q und T, t: Quadratische Bézierkurve
+        S,s smooth: cubic curve to
+        A, a Elliptical Arc:	Kreisbogen oder elliptischer Bogen
+        stroke-dasharray="50,5" bestimmt die Länge des durchgehenden Teilstücks (50), der zweite (5) die Breite der Lücken
+        stroke-dashoffset liegt zwischen 0 und dem ersten Wert von stroke-dasharray und legt den Anfang der ersten Teillinie fest.
+        stroke-linecap="round" für gepunktete Linie
+      -->
+      <path d="M300,300 L300,200 L200,200 Z" fill="red" stroke="#000" stroke-width="5"></path>
+    </svg>
+  </body>
+</html>
