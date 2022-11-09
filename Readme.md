@@ -83,7 +83,9 @@
 ## Install D3
 
 > GitHub Repository of D3 Library: <https://github.com/d3/d3>
+
 > GitHub Repositories of specific parts of D3 libraries: <https://github.com/d3>
+
 > Overview of available D3 modules (-> APIs): <https://github.com/d3/d3/blob/main/API.md>
 
 - package has big size, so it's split in multiple parts to save data volume
