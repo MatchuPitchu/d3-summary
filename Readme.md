@@ -95,3 +95,72 @@
 
 - install d3: `npm install d3`
 - types for TypeScript: `npm install --save-dev @types/d3`
+
+## Selections
+
+- `selections`: objects that represent HTML elements in the `DOM`
+  - methods that select or create elements return always the selection
+
+> <https://github.com/d3/d3-selection>
+
+```JavaScript
+// Native
+document.querySelector('p');
+
+// D3
+// similar to select elements with native browser API
+d3.select('p');
+
+d3.selectAll('p');
+
+// append new element as last child to selected element
+// returns a selection (here based on 'p')
+const body = d3.select('body');
+const p = body.append('p');
+```
+
+## Modyfiying Elements
+
+> <https://github.com/d3/d3-selection#modifying-elements>
+
+- a modifying method returns always the selection
+- you can chain multiple modifying methods together
+
+```JavaScript
+// attr(): adds (OR overwrites) attributes to specific element; can be placed on any position in the method chain
+// text(): replaces text content of element
+const el = d3.select('body')
+  .append('p')
+  .attr('i', 'foo')
+  .classed('bar baz', true) // truthy = classes are assigned to elements; falsy = unassigned
+  .text('Hello World')
+  .style('color', 'blue');
+```
+
+## Joining Data
+
+- data for D3 is only `text` and `numbers`
+- process of associating a piece of data with an element is known as `joining data`
+- then you can manipulate the shape of an element based on a data point
+
+![](/00_slides/01_joining-data.png)
+
+- `data()`: array of selections and array of data is joined (first selection with first item etc.)
+  - in element property list you can find `__data__: 10` etc.
+  - `_enter` property of selection: tells how many data items have been joint
+- `join()`: generates new elements if there were more data items than elements before
+  - and appends these new elements to parent of selection (-> here: you need additional `select('ul')`, otherwise html element would be parent)
+
+```HTML
+<ul>
+  <li>ListItem</li>
+  <li>ListItem</li>
+  <li>ListItem</li>
+</ul>
+```
+
+```JavaScript
+const data = [10, 20, 30, 40, 50];
+
+const element = d3.select('ul').selectAll('li').data(data).join('li').text('ListItem text overwritten');
+```
