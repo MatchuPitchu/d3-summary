@@ -147,9 +147,11 @@ const el = d3.select('body')
 
 - `data()`: array of selections and array of data is joined (first selection with first item etc.)
   - in element property list you can find `__data__: 10` etc.
-  - `_enter` property of selection: tells how many data items have been joint
-- `join()`: generates new elements if there were more data items than elements before
-  - and appends these new elements to parent of selection (-> here: you need additional `select('ul')`, otherwise html element would be parent)
+  - returns `_enter` property of selection: tells if more data items than elements (-> how many data items could not be joined)
+  - returns `_exit` property of selection: tells if more selected elements than data items (-> how many selected elements could not be joined)
+- `join(<string>|<cb fn>)`: handles balance if not exact number in selections array and data array
+  - generates new elements if there were more data items than elements before and appends these new elements to parent of selection (-> here: you need additional `select('ul')`, otherwise html element would be parent)
+  - OR removes elements if more selected elements than data items
 
 ```HTML
 <ul>
@@ -162,5 +164,47 @@ const el = d3.select('body')
 ```JavaScript
 const data = [10, 20, 30, 40, 50];
 
-const element = d3.select('ul').selectAll('li').data(data).join('li').text('ListItem text overwritten');
+// Example 1
+const element = d3
+  .select('ul')
+  .selectAll('li')
+  .data(data)
+  .join('li')
+  .text((d) => d); // insert string OR cb fn that provides data parameter);
 ```
+
+```JavaScript
+// Example 2
+const element = d3
+.select('ul')
+.selectAll('li')
+.data(data)
+.join(
+  // enter parameter: selection containing new created elements
+  (enter) => {
+    // return enter.append('li'); // default behavior ('li' is example)
+    return enter.append('li').style('color', 'purple');
+  },
+  // update parameter: selection containing elements that are already in existence
+  (update) => {
+    // return update; // default behavior
+    return update.style('color', 'green');
+  },
+  // exit parameter: selection containing elements that need to to be removed
+  (exit) => {
+    // return exit.remove(); // default behavior
+    return exit.style('color', 'green');
+  }
+)
+.text((d) => d);
+```
+
+## JSON Requests
+
+- data origin:
+
+  1. hard coded into JavaScript file
+  1. file (`JSON`, `CSV` etc.)
+  1. API
+
+> `d3-fetch` library: <https://github.com/d3/d3-fetch>
