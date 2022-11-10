@@ -80,6 +80,21 @@
 <path d="M300,300 L300,200 L200,200 Z" fill="red" stroke="#000" stroke-width="5"></path>
 ```
 
+- `<g>` element is a container used to group other SVG elements
+  - all presentation attributes are inherited to child elements
+- `viewBox` attribute is needed for responsive layout: `viewBox="x y width height"` (-> xy = starting point)
+
+```HTML
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <g fill="white" stroke="green" stroke-width="5">
+    <circle cx="40" cy="40" r="25" />
+    <circle cx="60" cy="60" r="25" />
+  </g>
+</svg>
+```
+
+![](/00_slides/03_svg-viewBox.png)
+
 ## Install D3
 
 > GitHub Repository of D3 Library: <https://github.com/d3/d3>
@@ -208,3 +223,138 @@ const element = d3
   1. API
 
 > `d3-fetch` library: <https://github.com/d3/d3-fetch>
+
+## Drawing a Scatterplot
+
+![](/00_slides/02_scatterplot.png)
+
+### Steps for Drawing a Chart
+
+1. get data
+1. draw chart dimensions
+1. draw image
+
+- `accessor function` can access and return a property of an object
+
+```TypeScript
+const xAccessor = (d: DataItem) => d.currently.humidity;
+const yAccessor = (d: DataItem) => d.currently.apparentTemperature;
+
+container
+  .selectAll('circle')
+  .data(dataset)
+  .join('circle')
+  // accessor cb function to get specific property in data item object
+  // draw humidity on x axis (cause value should ALWAYS be drawn on x axis, effect on y axis)
+  .attr('cx', xAccessor)
+  .attr('cy', yAccessor)
+```
+
+- `scales`: Documentation <https://github.com/d3/d3-scale>
+- they harmonizes the dimension of a viewing area and a chart -> i.e. mapping a dimension of abstract data to a visual representation
+  - `without scales`: data does NOT match the available space in the chart
+- `Example`: on various screen resolutions, you can upscale or downscale the position of your datapoints to adjust them to the screen size and make them visible and readable
+- `scale`: there is a function that takes in data and returns new data that can be used for positioning a shape, changing its dimensions, or changing its color
+  - `Input`-> `Scale` -> `Output`
+  - in `d3` specific scales are implemented for different use cases
+- `Example`: `const dataset = [100, 200, 300, 400, 500]`
+  - `Input Domain`: a range of possible values within the data (-> `100`, `500`)
+  - `Output Range`: size of the static viewing area (-> e.g. `0` to `max width of viewing area`)
+
+```TypeScript
+// Example for Scales
+const dataset = [100, 200, 300, 400, 500];
+
+//  d3.extent(array, cb accessor fn) does the same, BUT cb is useful for accessing deeper nested properties in array of objects
+// const getDomain = (array: number[]): [number, number] => [Math.min(...array), Math.max(...array)];
+// console.log(getDomain(dataset));
+
+const scale = d3.scaleLinear().domain(d3.extend(dataset)).range([10, 350]);
+
+scale(100); // 10
+scale(500); // 350
+```
+
+### Example of Scatterplot
+
+```TypeScript
+import './style.css';
+import * as d3 from 'd3';
+
+type DataItem = Record<string, any>;
+type Dataset = DataItem[] | undefined;
+
+interface Dimensions {
+  width: number;
+  height: number;
+  margin: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  containerWidth?: number;
+  containerHeight?: number;
+}
+
+const draw = async () => {
+  // [1] GET DATA
+  const dataset: Dataset = await d3.json('/data/data.json');
+  if (!dataset) return;
+
+  const xAccessor = (d: DataItem) => d.currently.humidity;
+  const yAccessor = (d: DataItem) => d.currently.apparentTemperature;
+
+  // [2] DIMENSIONS OF SVG GROUP AND CONTAINER FOR CHART ITEMS
+  const dimensions: Dimensions = {
+    width: 800,
+    height: 800,
+    margin: {
+      top: 50,
+      bottom: 50,
+      left: 50,
+      right: 50,
+    },
+  };
+
+  dimensions.containerWidth = dimensions.width - dimensions.margin.left - dimensions.margin.right;
+  dimensions.containerHeight = dimensions.height - dimensions.margin.top - dimensions.margin.bottom;
+
+  // DRAW EMPTY CHART
+  const svg = d3.select('#chart').append('svg').attr('width', dimensions.width).attr('height', dimensions.height);
+
+  // <g> element is a container used to group other SVG elements
+  // all presentation attributes are inherited to child elements
+  const container = svg.append('g').attr('transform', `translate(${dimensions.margin.left}, ${dimensions.margin.top})`);
+
+  // SCALES FUNCTIONS
+  // d3.extent(array, cb accessor fn) returns input domain [number, number]
+  // TypeScript solution: https://stackoverflow.com/questions/52124689/argument-of-type-string-string-error-in-angular-and-d3
+  const xScale = d3
+    .scaleLinear()
+    .domain(<[number, number]>d3.extent(dataset, xAccessor))
+    .range([0, dimensions.containerWidth]);
+
+  const yScale = d3
+    .scaleLinear()
+    .domain(<[number, number]>d3.extent(dataset, yAccessor))
+    .range([0, dimensions.containerHeight]);
+
+  // DRAW CIRCLES
+  // a) selectAll founds nothing in DOM
+  // b) then dataset is applied,
+  // c) data array of selections and array of data is joined, join creates new circles for every data item
+  container
+    .selectAll('circle')
+    .data(dataset)
+    .join('circle')
+    // accessor cb function to get specific property in data item object
+    // draw humidity on x axis (cause value should ALWAYS be drawn on x axis, effect on y axis)
+    .attr('cx', (d) => xScale(xAccessor(d)))
+    .attr('cy', (d) => yScale(yAccessor(d)))
+    .attr('r', 4)
+    .attr('fill', 'orange');
+};
+
+draw();
+```
