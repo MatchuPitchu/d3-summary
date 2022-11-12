@@ -258,13 +258,12 @@ container
 
 ### Scales
 
-- `scales`: Documentation <https://github.com/d3/d3-scale>
-- they harmonizes the dimension of a viewing area and a chart -> i.e. mapping a dimension of abstract data to a visual representation
-  - `without scales`: data does NOT match the available space in the chart
-- `Example`: on various screen resolutions, you can upscale or downscale the position of your datapoints to adjust them to the screen size and make them visible and readable
-- `scale`: there is a function that takes in data and returns new data that can be used for positioning a shape, changing its dimensions, or changing its color
-  - `Input`-> `Scale` -> `Output`
-  - in `d3` specific scales are implemented for different use cases
+> Documentation <https://github.com/d3/d3-scale>
+
+- `scales` harmonize the dimension of a viewing area AND a chart -> i.e. mapping a dimension of abstract data to a visual representation -> `without scales`: data does NOT match the available space in the chart
+- `Example`: on various screen resolutions, you can upscale or downscale the position of your data points to adjust them to the screen size and make them visible and readable
+- in `d3` specific `scale functions` are implemented for different use cases
+  - they take in data and return new data that can be used for positioning a shape, changing its dimensions, or changing its color: `Input`-> `Scale` -> `Output`
 - `Example`: `const dataset = [100, 200, 300, 400, 500]`
   - `Input Domain`: a range of possible values within the data (-> `100`, `500`)
   - `Output Range`: size of the static viewing area (-> e.g. `0` to `max width of viewing area`)
@@ -281,6 +280,39 @@ const scale = d3.scaleLinear().domain(d3.extend(dataset)).range([10, 350]);
 
 scale(100); // 10
 scale(500); // 350
+```
+
+#### Continuous vs Discrete Scales
+
+- if a dataset is continuous or discrete will narrow down the choices of a scale
+- `continuous` data
+  - can be measured
+  - can be broken down into fractions or decimals
+  - `infinite` possible values
+  - `Examples`: temperature, height, distance, time
+- `discrete` data
+
+  - can be counted
+  - can NOT be broken down into fractions or decimals
+  - `finite` possible values
+  - `Examples`: number of books in a library etc.
+
+#### Linear Scale
+
+- `scaleLinear()`: input domain AND output range are `continuous`
+
+![](/00_slides/04_scaleLinear-function-domain-range.png)
+
+```JavaScript
+const scale = d3.scaleLinear()
+  .domain([10, 90])
+  .range([0, 720]);
+
+scale(10); // 0
+scale(90); // 720
+scale(47.35); // 336.15000000000003
+scale(5); // -45
+scale(100); // 810
 ```
 
 ### Axis
@@ -417,4 +449,12 @@ const draw = async () => {
 };
 
 draw();
+```
+
+- `shape-rendering` CSS property: for SVG elements to define tradeoff between performance and accuracy: <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/shape-rendering>
+
+```CSS
+.axis {
+  shape-rendering: geometricPrecision;
+}
 ```

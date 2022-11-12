@@ -21,6 +21,7 @@ const convertFahrenheitToCelsius = (number: number) => ((number - 32) * 5) / 9;
 
 const draw = async () => {
   // [1] GET DATA
+  // array of objects containing wether data
   const dataset: Dataset = await d3.json('/data/data.json');
   if (!dataset) return;
 
@@ -65,7 +66,7 @@ const draw = async () => {
     .nice() // nice(): applied to input domain (-> look at data, if usefull or not), start + end number is rounded
     .clamp(true);
 
-  // [5] DRAW SHAPES
+  // [5] DRAW SHAPES -> CIRCLES
   // a) selectAll founds nothing in DOM
   // b) then dataset is applied,
   // c) data array of selections and array of data is joined, join creates new circles for every data item
