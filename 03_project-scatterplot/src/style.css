@@ -18,3 +18,9 @@
 #tooltip .metric-date {
   text-decoration: underline;
 }
+
+.axis {
+  font-size: 18px;
+  /* Property for SVG elements to define tradeoff between performance and accuracy https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/shape-rendering */
+  shape-rendering: geometricPrecision;
+}
