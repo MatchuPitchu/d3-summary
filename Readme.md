@@ -299,7 +299,7 @@ scale(500); // 350
 
 #### Linear Scale
 
-- `scaleLinear()`: input domain AND output range are `continuous`
+- `scaleLinear()`: input `domain` AND output `range` are `continuous`
 
 ![](/00_slides/04_scaleLinear-function-domain-range.png)
 
@@ -313,6 +313,17 @@ scale(90); // 720
 scale(47.35); // 336.15000000000003
 scale(5); // -45
 scale(100); // 810
+```
+
+- set a color range as output: `d3` converts `color names` or `hex` codes into range of `rgb`
+
+![](/00_slides/05_scaleLinear-color-convertion.png)
+
+```TypeScript
+const colorScale: ScaleLinear<string, string> = d3
+  .scaleLinear<string, string>() // define string as output range for colors
+  .domain(<[number, number]>d3.extent(dataset))
+  .range(['white', 'red']); // d3 converts color names into range of rgb
 ```
 
 ### Axis
