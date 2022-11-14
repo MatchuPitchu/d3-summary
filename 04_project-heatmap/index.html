@@ -10,6 +10,36 @@
   <body>
     <h1>Linear Scale</h1>
     <p>This scale is not the best scale for our dataset.</p>
+    <p>
+      Problem: linear scale transforms continuous scale into continuous (100 different data points to 100 different
+      colors) -> hard to read.
+    </p>
+    <p>Better solution: using other scale to transform into discrete output scale (limited number of colors).</p>
+
     <div class="chart" id="heatmap-1"></div>
+
+    <h1>Quantize Scale</h1>
+    <p>
+      The continuous input domain is divided into uniform segments (here: 3 buckets) based on the number of values in
+      the output range.
+    </p>
+    <div class="chart" id="heatmap-2"></div>
+
+    <h1>Quantile Scale</h1>
+    <p>
+      In contrast to the quantize scale, this takes the number (!) of values of input domain and divides them into equal
+      parts, each with the same number of values.
+    </p>
+    <p>Scale is not useful at all in this case.</p>
+    <div class="chart" id="heatmap-3"></div>
+
+    <h1>Threshold Scale</h1>
+    <p>
+      Threshold scales are similar to quantize scales, except they allow you to map arbitrary subsets of the domain to
+      discrete values in the range. The input domain is still continuous, and divided into slices based on a set of
+      threshold values.
+    </p>
+    <p>Best data representation because threshold for household incomes are based on research.</p>
+    <div class="chart" id="heatmap-4"></div>
   </body>
 </html>

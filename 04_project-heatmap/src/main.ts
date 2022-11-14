@@ -1,6 +1,6 @@
 import './style.css';
 import * as d3 from 'd3';
-import { ScaleLinear } from 'd3';
+import { ScaleLinear, ScaleQuantile, ScaleQuantize, ScaleThreshold } from 'd3';
 
 type Dataset = number[] | undefined;
 
@@ -11,7 +11,7 @@ interface Dimensions {
   containerHeight?: number;
 }
 
-const draw = async (elementSelector: string, scale: 'linear') => {
+const draw = async (elementSelector: string, scale: 'linear' | 'quantize' | 'quantile' | 'threshold') => {
   // [1] DATA
   // array of 100 numbers representing income of US households
   const dataset: Dataset = await d3.json('./data/data.json');
@@ -34,12 +34,38 @@ const draw = async (elementSelector: string, scale: 'linear') => {
     .attr('height', dimensions.height);
 
   // [4] SCALES
-  let colorScale: ScaleLinear<string, string>;
+  let colorScale:
+    | ScaleLinear<string, string>
+    | ScaleQuantize<string>
+    | ScaleQuantile<string>
+    | ScaleThreshold<number, string>;
+
   if (scale === 'linear') {
+    // Problem: linear scale transforms continuous scale into continuous (100 different data points to 100 different colors) -> hard to read
+    // Better solution: using other scale to transform into discrete output scale (limited number of colors)
     colorScale = d3
       .scaleLinear<string, string>() // define string as output range for colors
       .domain(<[number, number]>d3.extent(dataset))
       .range(['white', 'red']); // d3 converts color names into range of rgb
+  } else if (scale === 'quantize') {
+    colorScale = d3
+      .scaleQuantize<string>()
+      .domain(<[number, number]>d3.extent(dataset))
+      .range(['white', 'pink', 'red']);
+
+    console.log('Quantize thresholds:', (colorScale as ScaleQuantize<string>).thresholds());
+  } else if (scale === 'quantile') {
+    colorScale = d3
+      .scaleQuantile<string>()
+      .domain(dataset) // pass in entire dataset
+      .range(['white', 'pink', 'red']);
+
+    console.log('Quantile thresholds:', (colorScale as ScaleQuantile<string>).quantiles());
+  } else if (scale === 'threshold') {
+    colorScale = d3
+      .scaleThreshold<number, string>()
+      .domain([45200, 135600]) // pass in array with your thresholds
+      .range(['white', 'pink', 'red']);
   }
 
   // [5] DRAW SHAPES -> RECTANGLES
@@ -60,3 +86,6 @@ const draw = async (elementSelector: string, scale: 'linear') => {
 };
 
 draw('#heatmap-1', 'linear');
+draw('#heatmap-2', 'quantize');
+draw('#heatmap-3', 'quantile');
+draw('#heatmap-4', 'threshold');
