@@ -65,14 +65,16 @@ const draw = async (elementSelector: string, scale: 'linear' | 'quantize' | 'qua
     colorScale = d3
       .scaleThreshold<number, string>()
       .domain([45200, 135600]) // pass in array with your thresholds
-      .range(['white', 'pink', 'red']);
+      .range(d3.schemeReds[3]); // using color scheme with 3 hex colors (get theme with index 3)
   }
 
   // [5] DRAW SHAPES -> RECTANGLES
-  svg
+  const rectanglesGroup = svg
     .append('g')
     .attr('transform', 'translate(2, 2)') // move group to have some spacing to container borders
-    .attr('stroke', 'black') // representational attributes applied to <g> will be inherited to all child elements
+    .attr('stroke', 'black'); // representational attributes applied to <g> will be inherited to all child elements
+
+  rectanglesGroup
     .selectAll('rect')
     .data(dataset)
     .join('rect')
@@ -89,3 +91,11 @@ draw('#heatmap-1', 'linear');
 draw('#heatmap-2', 'quantize');
 draw('#heatmap-3', 'quantile');
 draw('#heatmap-4', 'threshold');
+
+// COLOR SCHEMES
+console.log(d3.schemeCategory10);
+
+console.log(d3.interpolateRdYlGn(0));
+console.log(d3.interpolateRdYlGn(1));
+
+console.log(d3.schemeRdYlGn); // returns array of arrays

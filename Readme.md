@@ -375,6 +375,26 @@ const colorScale: ScaleThreshold<number, string> = d3
   .range(['white', 'pink', 'red']);
 ```
 
+#### Log Scale
+
+> Article about Log Scales: <https://medium.com/@kyawsawhtoon/log-transformation-purpose-and-interpretation-9444b4b049c9>
+
+- input `domain` AND output `range` are `continuous`
+- applies a logarithmic transformation on your domain before transforming it
+- use case: when dealing with exponential values and you recognize the `skewing` problem, try `log scale`
+- common types of data a log scale is used for: corona infections, money, time, distance
+
+![](/00_slides/09_log-scale.png)
+
+```TypeScript
+// Example Project 5
+const universeScale = d3
+  // .scaleLinear() // // Skewing Problem: Linear Scale does NOT work since distance between biggest and smallest item is too great
+  .scaleLog()
+  .domain(<[number, number]>d3.extent(dataset, getSize))
+  .range([dimensions.height - dimensions.margin, dimensions.margin]); // scale lowest value to highest point on screen and vice versa
+```
+
 ### Axis
 
 > Documentation: <https://github.com/d3/d3-axis>
@@ -383,6 +403,31 @@ const colorScale: ScaleThreshold<number, string> = d3
 - `d3.axisBottom()`: ticks are drawn below horizontal line
 - `d3.axisLeft()`: ticks are drawn left of vertical line
 - `d3.axisRight()`: ticks are drawn right of vertical line
+
+### Color Schemes
+
+> Documentation: <https://github.com/d3/d3-scale-chromatic>
+
+- list of pre-configured color schemes to use for your scales: [1] `Categorical`, [2] `Diverging`, [3] `Sequential (Single Hue)`, [4] `Sequential (Multi-Hue)`, [5] `Cyclical`
+- each scheme has:
+
+  - a `interpolateNAME_OF_SCHEME` function: you pass in a value between 0 and 1 and get returned a color at this specific position of the scheme range
+
+  ```TypeScript
+  d3.interpolateRdYlGn(0);
+  d3.interpolateRdYlGn(0.4);
+  d3.interpolateRdYlGn(1);
+  ```
+
+  - a `schemeNAME_OF_SCHEME` readonly property: returns array of arrays with index between 3 and `11`, index number indicates number of `hex` colors in the specific array
+
+  ```TypeScript
+  const colorScale: ScaleThreshold<number, string> = d3
+  .scaleThreshold<number, string>()
+  .domain([45200, 135600]) // pass in array with your thresholds
+  .range(d3.schemeReds[3]); // using color scheme with 3 hex colors (get theme with index 3)
+
+  ```
 
 ## Example of Scatterplot
 
@@ -613,4 +658,82 @@ draw('#heatmap-1', 'linear');
 draw('#heatmap-2', 'quantize');
 draw('#heatmap-3', 'quantile');
 draw('#heatmap-4', 'threshold');
+```
+
+## Example of Logarithmic Scale
+
+```TypeScript
+import './style.css';
+import * as d3 from 'd3';
+
+type DataItem = {
+  name: string;
+  size: number;
+};
+type Dataset = DataItem[] | undefined;
+
+interface Dimensions {
+  width: number;
+  height: number;
+  margin: number;
+  containerWidth?: number;
+  containerHeight?: number;
+}
+
+const draw = async (elementSelector: string) => {
+  // [1] DATA
+  // array of objects of things with their size in the universe
+  const dataset: Dataset = await d3.json('./data/data.json');
+  if (!dataset) return;
+
+  const getName = (d: DataItem) => d.name;
+  const getSize = (d: DataItem) => d.size;
+
+  // [2] DIMENSIONS
+  const dimensions: Dimensions = {
+    width: 200,
+    height: 500,
+    margin: 50,
+  };
+
+  // [3] DRAW IMAGE
+  const svg = d3
+    .select(elementSelector)
+    .append('svg')
+    .attr('width', dimensions.width)
+    .attr('height', dimensions.height);
+
+  // [4] SCALE
+  const universeScale = d3
+    // .scaleLinear() // // Skewing Problem: Linear Scale does NOT work since distance between biggest and smallest item is too great
+    .scaleLog()
+    .domain(<[number, number]>d3.extent(dataset, getSize))
+    .range([dimensions.height - dimensions.margin, dimensions.margin]); // scale lowest value to highest point on screen and vice versa
+
+  // [5] DRAW SHAPES
+  // CSS property 'dominant-baseline' to align svg elements: https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
+  const circlesGroup = svg.append('g').style('font-size', '16px').style('dominant-baseline', 'middle');
+
+  circlesGroup
+    .selectAll('circle')
+    .data(dataset)
+    .join('circle')
+    .attr('cx', dimensions.margin)
+    .attr('cy', (d) => universeScale(getSize(d)))
+    .attr('r', 6);
+
+  circlesGroup
+    .selectAll('text')
+    .data(dataset)
+    .join('text')
+    .attr('x', dimensions.margin + 15) // position text label at right of circle
+    .attr('y', (d) => universeScale(getSize(d)))
+    .text(getName);
+
+  // [6] ADD AXIS
+  const axis = d3.axisLeft(universeScale);
+  svg.append('g').attr('transform', `translate(${dimensions.margin}, 0)`).call(axis);
+};
+
+draw('#chart');
 ```
