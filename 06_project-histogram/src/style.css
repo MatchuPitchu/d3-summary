@@ -1,0 +1,30 @@
+body {
+  background-color: #f7f7f7;
+}
+
+h1 {
+  text-align: center;
+}
+
+#chart {
+  margin: 25px auto;
+  width: 800px;
+}
+
+.bar-labels {
+  text-anchor: middle; /* center svg element */
+  font-size: 16px;
+  font-family: sans-serif;
+}
+
+select {
+  margin: 25px auto 0;
+  display: block;
+  font-size: 20px;
+}
+
+.mean-line {
+  stroke: #d62828;
+  stroke-dasharray: 6;
+  stroke-width: 2px;
+}
