@@ -759,8 +759,8 @@ interface Dimensions {
   width: number;
   height: number;
   margin: number;
-  containerWidth?: number;
-  containerHeight?: number;
+  containerWidth: number;
+  containerHeight: number;
 }
 
 const draw = async (elementSelector: string) => {
@@ -777,6 +777,8 @@ const draw = async (elementSelector: string) => {
     width: 800,
     height: 400,
     margin: 50,
+    containerWidth: 0,
+    containerHeight: 0
   };
 
   dimensions.containerWidth = dimensions.width - dimensions.margin * 2;
@@ -825,7 +827,7 @@ const draw = async (elementSelector: string) => {
     .attr('width', (d) => d3.max([0, xScale(d.x1!) - xScale(d.x0!) - padding]) || 0) // width should be >= 0 or calculated value
     .attr('height', (d) => {
       console.log(yAccessor(d), yScale(yAccessor(d)));
-      return dimensions.containerHeight! - yScale(yAccessor(d)); // minus yScale() since output range was reversed in yScale
+      return dimensions.containerHeight - yScale(yAccessor(d)); // minus yScale() since output range was reversed in yScale
     })
     .attr('x', (d) => xScale(d.x0!)) // position bars on x axis
     .attr('y', (d) => yScale(yAccessor(d)))
@@ -849,4 +851,122 @@ const draw = async (elementSelector: string) => {
 };
 
 draw('#chart');
+```
+
+## Example of Histogram with Change Event
+
+```TypeScript
+import './style.css';
+import * as d3 from 'd3';
+
+type DataItem = Record<string, any>;
+type Dataset = DataItem[] | undefined;
+
+interface Dimensions {
+  width: number;
+  height: number;
+  margin: number;
+  containerWidth: number;
+  containerHeight: number;
+}
+
+type Metric = 'humidity' | 'temperature' | 'dewPoint' | 'windSpeed' | 'cloudCover' | 'ozone';
+
+const draw = async (chartWrapperSelector: string, metricSelector: string) => {
+  // [1] DATA
+  const dataset: Dataset = await d3.json('./data/data.json');
+  if (!dataset) return;
+
+  // [2] DIMENSIONS
+  const dimensions: Dimensions = {
+    width: 800,
+    height: 400,
+    margin: 50,
+    containerWidth: 0,
+    containerHeight: 0,
+  };
+
+  dimensions.containerWidth = dimensions.width - dimensions.margin * 2;
+  dimensions.containerHeight = dimensions.height - dimensions.margin * 2;
+
+  // [3] DRAW IMAGE
+  const svg = d3
+    .select(chartWrapperSelector)
+    .append('svg')
+    .attr('width', dimensions.width)
+    .attr('height', dimensions.height);
+
+  const container = svg.append('g').attr('transform', `translate(${dimensions.margin}, ${dimensions.margin})`);
+
+  // create once labelsGroup AND xAxisGroup
+  // so d3 is aware when there are already elements on screen and
+  // removes and creates new elements based on dataset
+  const labelsGroup = container.append('g').classed('bar-labels', true);
+  const xAxisGroup = container.append('g').style('transform', `translateY(${dimensions.containerHeight}px)`);
+
+  const drawHistogram = (metric: Metric) => {
+    const xAccessor = (d: DataItem): number => d.currently[metric];
+    const yAccessor = (d: any[]): number => d.length;
+
+    // [4] SCALE
+    const xScale = d3
+      .scaleLinear()
+      .domain(<[number, number]>d3.extent(dataset, xAccessor))
+      .range([0, dimensions.containerWidth])
+      .nice();
+
+    // [5] DATA GROUPING FOR HISTOGRAM
+    const bin = d3
+      .bin<DataItem, number>()
+      .domain(<[number, number]>xScale.domain())
+      .value(xAccessor)
+      .thresholds(10);
+
+    const newDataset = bin(dataset);
+    const padding = 1;
+
+    const yScale = d3
+      .scaleLinear()
+      .domain(<[number, number]>[0, d3.max(newDataset, yAccessor)])
+      .range([dimensions.containerHeight, 0])
+      .nice();
+
+    // [6] DRAW SHAPES - BARS
+    container
+      .selectAll('rect')
+      .data(newDataset)
+      .join('rect')
+      .attr('width', (d) => d3.max([0, xScale(d.x1!) - xScale(d.x0!) - padding]) || 0)
+      .attr('height', (d) => dimensions.containerHeight - yScale(yAccessor(d)))
+      .attr('x', (d) => xScale(d.x0!))
+      .attr('y', (d) => yScale(yAccessor(d)))
+      .attr('fill', '#01c5c4');
+
+    labelsGroup
+      .selectAll('text')
+      .data(newDataset)
+      .join('text')
+      .attr('x', (d) => xScale(d.x0!) + (xScale(d.x1!) - xScale(d.x0!)) / 2)
+      .attr('y', (d) => yScale(yAccessor(d)) - 10)
+      .text(yAccessor);
+
+    // [7] AXIS
+    const axis = d3.axisBottom(xScale);
+    xAxisGroup.call(axis);
+  };
+
+  // [8] Events
+  const handleMetricChange = (event: Event) => {
+    event.preventDefault();
+    const metric = (event.target as HTMLSelectElement).value as Metric;
+
+    drawHistogram(metric);
+  };
+
+  d3.select(metricSelector).on('change', handleMetricChange); // listen to change events
+
+  drawHistogram('humidity'); // this is drawn on mount
+};
+
+draw('#chart', '#metric');
 ```
