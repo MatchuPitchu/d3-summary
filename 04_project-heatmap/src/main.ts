@@ -7,8 +7,6 @@ type Dataset = number[] | undefined;
 interface Dimensions {
   width: number;
   height: number;
-  containerWidth?: number;
-  containerHeight?: number;
 }
 
 const draw = async (elementSelector: string, scale: 'linear' | 'quantize' | 'quantile' | 'threshold') => {

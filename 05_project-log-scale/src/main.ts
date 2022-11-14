@@ -11,8 +11,6 @@ interface Dimensions {
   width: number;
   height: number;
   margin: number;
-  containerWidth?: number;
-  containerHeight?: number;
 }
 
 const draw = async (elementSelector: string) => {
