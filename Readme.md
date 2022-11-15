@@ -423,9 +423,9 @@ const universeScale = d3
 
   ```TypeScript
   const colorScale: ScaleThreshold<number, string> = d3
-  .scaleThreshold<number, string>()
-  .domain([45200, 135600]) // pass in array with your thresholds
-  .range(d3.schemeReds[3]); // using color scheme with 3 hex colors (get theme with index 3)
+    .scaleThreshold<number, string>()
+    .domain([45200, 135600]) // pass in array with your thresholds
+    .range(d3.schemeReds[3]); // using color scheme with 3 hex colors (get theme with index 3)
   ```
 
 ### Chart type: Histogram
@@ -574,6 +574,246 @@ draw();
 .axis {
   shape-rendering: geometricPrecision;
 }
+```
+
+### Animation
+
+> Documentation `D3 Transition`: <https://github.com/d3/d3-transition>
+
+- animates any property
+- synchronizes animations
+- plays animations in sequence
+- allows animations to be interrupted
+
+- possible `problems`:
+
+  - new created elements start at coordinates `0,0`, so animation transition starts at this point - `solution`: change starting position
+  - removed elements do NOT get animated - `solution`: use specific cb functions available as arguments of `join()`
+
+- `transition()`
+  - returns selection with methods to animate properties of selection
+  - animates properties that are modified AFTER that function was integrated
+  - properties (e.g. `width` ...) set BEFORE transition() are NOT animated
+
+```TypeScript
+// [9] ANIMATION
+// set order of animationn
+// each definition has an '_id' property that d3 can identify it when you pass one as argument into transition() -> look below
+// Matching animations: if multiple animations plays at once, d3 checks if they have same id and synchronize them
+const exitTransition = d3.transition().duration(500);
+const updateTransition = exitTransition.transition().duration(500);
+
+// [6] DRAW SHAPES - BARS
+// NOW: all bars are drawn (even if they overlap)
+container
+  .selectAll('rect')
+  .data(newDataset)
+  .join(
+    // define new created elements and their starting shape -> they are merged with current selection
+    (enter) =>
+      enter
+        .append('rect')
+        .attr('width', (d) => d3.max([0, xScale(d.x1!) - xScale(d.x0!) - padding]) || 0)
+        .attr('height', 0) // height = 0
+        .attr('x', (d) => xScale(d.x0!))
+        .attr('y', dimensions.containerHeight) // position bars at bottom of y axis
+        .attr('fill', '#b8de6f'),
+    // define list of elements that need to be updated
+    (update) => update,
+    // define list of elements that need to be removed
+    (exit) =>
+      exit
+        .attr('fill', '#f39233') // add before transition() since color should change without transition
+        .transition(exitTransition)
+        .attr('y', dimensions.containerHeight) // position bars before remove
+        .attr('height', 0) // height before remove
+        .remove()
+  )
+  // [9] ANIMATION
+  .transition(updateTransition)
+  .attr('width', (d) => d3.max([0, xScale(d.x1!) - xScale(d.x0!) - padding]) || 0)
+  .attr('height', (d) => dimensions.containerHeight - yScale(yAccessor(d)))
+  .attr('x', (d) => xScale(d.x0!))
+  .attr('y', (d) => yScale(yAccessor(d)))
+  .attr('fill', '#01c5c4');
+
+labelsGroup
+  .selectAll('text')
+  .data(newDataset)
+  .join(
+    (enter) =>
+      enter
+        .append('text')
+        .attr('x', (d) => xScale(d.x0!) + (xScale(d.x1!) - xScale(d.x0!)) / 2)
+        .attr('y', dimensions.containerHeight)
+        .text(yAccessor),
+    (update) => update,
+    (exit) =>
+      exit
+        .transition(exitTransition)
+        .attr('y', dimensions.containerHeight) // label go down with bars
+        .remove()
+  )
+  .transition(updateTransition)
+  .attr('x', (d) => xScale(d.x0!) + (xScale(d.x1!) - xScale(d.x0!)) / 2)
+  .attr('y', (d) => yScale(yAccessor(d)) - 10)
+  .text(yAccessor);
+
+// [7] AXIS
+const axis = d3.axisBottom(xScale);
+xAxisGroup.transition().call(axis);
+```
+
+### Add Average (= Mean) Line to a Chart
+
+```TypeScript
+// Example Project 6
+const meanLine = container.append('line').classed('mean-line', true);
+
+// ... [4] SCALE
+// ... [5] DATA GROUPING FOR HISTOGRAM
+// ... [6] DRAW SHAPES - BARS
+
+// calculate the mean (average) of our original dataset (not grouped newDataset) of the values returned by xAccessor
+const mean = d3.mean(dataset, xAccessor);
+
+// straight line from bottom to top
+meanLine
+  .raise() // reinserts an element at the end of its parent block
+  .transition(updateTransition)
+  .attr('x1', xScale(mean!))
+  .attr('y1', 0)
+  .attr('x2', xScale(mean!))
+  .attr('y2', dimensions.containerHeight);
+```
+
+### Format Numbers and Dates
+
+> Documentation `D3 Format`: <https://github.com/d3/d3-format>
+> Documentation `D3 Time Format`: <https://github.com/d3/d3-time-format>
+
+### Adding Tooltips
+
+```TypeScript
+// Example Project 3
+const tooltip = d3.select(tooltipSelector);
+
+// data object joined to rect element is available as 2nd parameter
+// since `dataset` is connected to elements with data(dataset)
+const handleMouseenter = ({ target }: { target: SVGRectElement }, datum: DataItem) => {
+  d3.select(target).attr('fill', '#120078').attr('r', 8);
+
+  // Docu: https://github.com/d3/d3-format
+  const formatter = d3.format('.2f');
+  // Docu: https://github.com/d3/d3-time-format
+  const dateFormatter = d3.timeFormat('%B %-d, %Y');
+
+  tooltip
+    .style('display', 'block')
+    .style('top', `${yScale(yAccessor(datum)) - 40}px`) // position tooltip on top of circle
+    .style('left', `${xScale(xAccessor(datum))}px`);
+
+  tooltip.select('.metric-humidity > span').text(`${Math.round(xAccessor(datum) * 100)}%`);
+  tooltip.select('.metric-temperature > span').text(formatter(yAccessor(datum)));
+  const dateInMs = new Date(datum.currently.time * 1000);
+  tooltip.select('.metric-date').text(dateFormatter(dateInMs));
+};
+
+const handleMouseleve = ({ target }: { target: SVGRectElement }) => {
+  d3.select(target).attr('fill', 'orange').attr('r', 5);
+
+  tooltip.style('display', 'none');
+};
+
+// ...
+container
+  .selectAll('circle')
+  .data(dataset)
+  .join('circle')
+  .attr('cx', (d) => xScale(xAccessor(d)))
+  .attr('cy', (d) => yScale(yAccessor(d)))
+  .attr('r', 4)
+  .attr('fill', 'orange')
+  .attr('data-temp', yAccessor)
+  .on('mouseenter', handleMouseenter)
+  .on('mouseleave', handleMouseleve);
+```
+
+### Voronoi Diagram
+
+> Documentation `D3 Delaunay`: <https://github.com/d3/d3-delaunay>
+
+- it's a diagram that can tell you the shortest distance to react a specific location
+- `use case`: you can use it in a scatterplot (-> `example project 3`) to detect which data point is the closest to the mouse cursor position to show a tooltip
+
+![](/00_slides/12_voronoi-diagram_1.png)
+
+![](/00_slides/13_voronoi-diagram_2.png)
+
+```TypeScript
+// Example Project 3
+const tooltip = d3.select(tooltipSelector);
+
+const handleMouseenter = (event: MouseEvent, datum: DataItem) => {
+  // FOR OPTION 2 WITH VORONOI: create new circle
+  container
+    .append('circle')
+    .classed('dot-hovered', true)
+    .attr('fill', '#120078')
+    .attr('r', 8)
+    .attr('cx', (d) => xScale(xAccessor(datum)))
+    .attr('cy', (d) => yScale(yAccessor(datum)))
+    // have to set that ALL events on this event will be ignored
+    // otherwise when hovering over new created circle, mouseleave event of 'path' element would be triggered
+    .style('pointer-events', 'none');
+
+  const formatter = d3.format('.2f');
+  const dateFormatter = d3.timeFormat('%B %-d, %Y');
+
+  tooltip
+    .style('display', 'block')
+    .style('top', `${yScale(yAccessor(datum)) - 40}px`) // position tooltip on top of circle
+    .style('left', `${xScale(xAccessor(datum))}px`);
+
+  tooltip.select('.metric-humidity > span').text(`${Math.round(xAccessor(datum) * 100)}%`);
+  tooltip.select('.metric-temperature > span').text(formatter(yAccessor(datum)));
+  const dateInMs = new Date(datum.currently.time * 1000);
+  tooltip.select('.metric-date').text(dateFormatter(dateInMs));
+};
+
+const handleMouseleve = (event: MouseEvent) => {
+  // FOR OPTION 2 WITH VORONOI
+  container.select('.dot-hovered').remove();
+
+  tooltip.style('display', 'none');
+};
+
+// ...
+
+// [7] VORONOI DIAGRAM WITH D3 DELAUNAY LIBRARY
+// to detect which datapoint is closest to mouse cursor position
+// goal: improve UX for mouse events
+const delaunay = d3.Delaunay.from(
+  dataset,
+  (d) => xScale(xAccessor(d)), // x coordinate
+  (d) => yScale(yAccessor(d)) // y coordinate
+); // returns object with coordinates to draw the voronoi diagram
+
+const voronoi = delaunay.voronoi(); // generates functions to draw the voronoi diagram
+voronoi.xmax = dimensions.containerWidth; // set dimensions of scatterplot
+voronoi.ymax = dimensions.containerHeight;
+
+container
+  .append('g')
+  .selectAll('path') // no paths exist
+  .data(dataset) // joins dataset items with selected elements
+  .join('path') // creates new paths to match with dataset items
+  .attr('stroke', 'grey')
+  .attr('fill', 'transparent')
+  .attr('d', (d, index) => voronoi.renderCell(index)) // renderCell returns coordinates that paths can be drawn (-> 'd' property)
+  // OPTION 2: attached to voronoi areas
+  .on('mouseenter', handleMouseenter)
+  .on('mouseleave', handleMouseleve);
 ```
 
 ## Example of Heatmaps with different scales

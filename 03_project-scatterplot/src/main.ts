@@ -17,9 +17,12 @@ interface Dimensions {
   containerHeight?: number;
 }
 
-const convertFahrenheitToCelsius = (number: number) => ((number - 32) * 5) / 9;
+const convertFahrenheitToCelsius = (number: number) => {
+  const celsius = ((number - 32) * 5) / 9;
+  return Math.round(celsius * 100) / 100;
+};
 
-const draw = async () => {
+const draw = async (chartWrapperSelector: string, tooltipSelector: string) => {
   // [1] GET DATA
   // array of objects containing wether data
   const dataset: Dataset = await d3.json('/data/data.json');
@@ -44,13 +47,63 @@ const draw = async () => {
   dimensions.containerHeight = dimensions.height - dimensions.margin.top - dimensions.margin.bottom;
 
   // [3] DRAW IMAGE (-> EMPTY CHART)
-  const svg = d3.select('#chart').append('svg').attr('width', dimensions.width).attr('height', dimensions.height);
+  const svg = d3
+    .select(chartWrapperSelector)
+    .append('svg')
+    .attr('width', dimensions.width)
+    .attr('height', dimensions.height);
 
   // <g> element is a container used to group other SVG elements
   // all presentation attributes are inherited to child elements
   const container = svg.append('g').attr('transform', `translate(${dimensions.margin.left}, ${dimensions.margin.top})`);
 
-  // [4] CREATE SCALES
+  const tooltip = d3.select(tooltipSelector);
+
+  // data object joined to rect element is available as 2nd parameter
+  // since `dataset` is connected to elements with data(dataset)
+  const handleMouseenter = ({ target }: { target: SVGRectElement }, datum: DataItem) => {
+    // FOR OPTION 1 WITHOUT VORONOI: update existing circle
+    // d3.select(target).attr('fill', '#120078').attr('r', 8);
+
+    // FOR OPTION 2 WITH VORONOI: create new circle
+    container
+      .append('circle')
+      .classed('dot-hovered', true)
+      .attr('fill', '#120078')
+      .attr('r', 8)
+      .attr('cx', (d) => xScale(xAccessor(datum)))
+      .attr('cy', (d) => yScale(yAccessor(datum)))
+      // have to set that ALL events on this event will be ignored
+      // otherwise when hovering over new created circle, mouseleave event of 'path' element would be triggered
+      .style('pointer-events', 'none');
+
+    // Docu: https://github.com/d3/d3-format
+    const formatter = d3.format('.2f');
+    // Docu: https://github.com/d3/d3-time-format
+    const dateFormatter = d3.timeFormat('%B %-d, %Y');
+
+    tooltip
+      .style('display', 'block')
+      .style('top', `${yScale(yAccessor(datum)) - 30}px`) // position tooltip on top of circle
+      .style('left', `${xScale(xAccessor(datum))}px`);
+
+    tooltip.select('.metric-humidity > span').text(`${Math.round(xAccessor(datum) * 100)}%`);
+    tooltip.select('.metric-temperature > span').text(formatter(yAccessor(datum)));
+    const dateInMs = new Date(datum.currently.time * 1000);
+    tooltip.select('.metric-date').text(dateFormatter(dateInMs));
+  };
+
+  const handleMouseleve = ({ target }: { target: SVGRectElement }) => {
+    // FOR OPTION 1 WITHOUT VORONOI: update existing circle
+    // d3.select(target).attr('fill', 'orange').attr('r', 5);
+
+    // FOR OPTION 2 WITH VORONOI
+    container.select('.dot-hovered').remove();
+
+    tooltip.style('display', 'none');
+  };
+
+  // [4] SCALES
   // d3.extent(array, cb accessor fn) returns input domain [number, number]
   // TypeScript solution: https://stackoverflow.com/questions/52124689/argument-of-type-string-string-error-in-angular-and-d3
   const xScale = d3
@@ -81,6 +134,9 @@ const draw = async () => {
     .attr('r', 4)
     .attr('fill', 'orange')
     .attr('data-temp', yAccessor); // to see which circle represents which data point
+  // OPTION 1: attached to circles
+  // .on('mouseenter', handleMouseenter)
+  // .on('mouseleave', handleMouseleve);
 
   // [6] DRAW AXIS
   // add scale function for correct scale
@@ -118,6 +174,31 @@ const draw = async () => {
     // 'text-anchor' is alignment property for svg only
     // 'middle': middle of text is exactly the value of x coordinate (-> here because of rotation)
     .style('text-anchor', 'middle');
+
+  // [7] VORONOI DIAGRAM WITH D3 DELAUNAY LIBRARY
+  // to detect which datapoint is closest to mouse cursor position
+  // goal: improve UX for mouse events
+  const delaunay = d3.Delaunay.from(
+    dataset,
+    (d) => xScale(xAccessor(d)), // x coordinate
+    (d) => yScale(yAccessor(d)) // y coordinate
+  ); // returns object with coordinates to draw the voronoi diagram
+
+  const voronoi = delaunay.voronoi(); // generates functions to draw the voronoi diagram
+  voronoi.xmax = dimensions.containerWidth; // set dimensions of scatterplot
+  voronoi.ymax = dimensions.containerHeight;
+
+  container
+    .append('g')
+    .selectAll('path') // no paths exist
+    .data(dataset) // joins dataset items with selected elements
+    .join('path') // creates new paths to match with dataset items
+    .attr('stroke', 'grey')
+    .attr('fill', 'transparent')
+    .attr('d', (d, index) => voronoi.renderCell(index)) // renderCell returns coordinates that paths can be drawn (-> 'd' property)
+    // OPTION 2: attached to voronoi areas
+    .on('mouseenter', handleMouseenter)
+    .on('mouseleave', handleMouseleve);
 };
 
-draw();
+draw('#chart', '#tooltip');
