@@ -1,0 +1,26 @@
+body {
+  background-color: #f7f7f7;
+}
+
+h1 {
+  text-align: center;
+}
+
+#chart {
+  margin: 25px auto;
+  width: 1000px;
+  position: relative;
+}
+
+#tooltip {
+  border: 1px solid #ccc;
+  position: absolute;
+  padding: 10px;
+  background-color: #fff;
+  display: none;
+  pointer-events: none;
+}
+
+.price {
+  font-weight: bold;
+}
