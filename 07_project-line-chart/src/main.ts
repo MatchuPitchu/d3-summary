@@ -63,29 +63,6 @@ const draw = async (chartWrapperSelector: string, tooltipSelector: string) => {
     .style('opacity', 0)
     .style('pointer-events', 'none');
 
-  // [5] SCALES
-  const yScale = d3
-    .scaleLinear<number, number>()
-    .domain(<[number, number]>d3.extent(dataset, yAccessor))
-    .range([dimensions.containerHeight, 0])
-    .nice();
-
-  // scaleTime and scaleUtc transform Date object into number
-  // scaleUtc: constructs a new time scale based on the Coordinated Universal Time (UTC) with the specified range
-  // -> time is equal no matter where you are living
-  const xScale = d3
-    // .scaleTime<number, number>()
-    .scaleUtc<number, number>()
-    .domain(<[Date, Date]>d3.extent(dataset, xAccessor))
-    .range([0, dimensions.containerWidth]);
-
-  // [6] PATH GENERATOR
-  const lineGenerator = d3
-    .line<DataItem>()
-    .x((d) => xScale(xAccessor(d)!))
-    .y((d) => yScale(yAccessor(d)!));
-
-  // [7] DRAW SHAPE -> PATH
   const handleTouch = (event: TouchEvent | MouseEvent) => {
     const mousePosition = d3.pointer(event, event.target); // returns current mouse position
 
@@ -116,11 +93,34 @@ const draw = async (chartWrapperSelector: string, tooltipSelector: string) => {
     tooltip.select('.date').text(dateFormatter(xAccessor(selectedDataPoint)!));
   };
 
-  const handleMouseleave = (event: MouseEvent) => {
+  const handleMouseleave = (_: MouseEvent) => {
     tooltipDot.style('opacity', 0);
     tooltip.style('display', 'none');
   };
 
+  // [5] SCALES
+  const yScale = d3
+    .scaleLinear<number, number>()
+    .domain(<[number, number]>d3.extent(dataset, yAccessor))
+    .range([dimensions.containerHeight, 0])
+    .nice();
+
+  // scaleTime and scaleUtc transform Date object into number
+  // scaleUtc: constructs a new time scale based on the Coordinated Universal Time (UTC) with the specified range
+  // -> time is equal no matter where you are living
+  const xScale = d3
+    // .scaleTime<number, number>()
+    .scaleUtc<number, number>()
+    .domain(<[Date, Date]>d3.extent(dataset, xAccessor))
+    .range([0, dimensions.containerWidth]);
+
+  // [6] PATH GENERATOR
+  const lineGenerator = d3
+    .line<DataItem>()
+    .x((d) => xScale(xAccessor(d)!))
+    .y((d) => yScale(yAccessor(d)!));
+
+  // [7] DRAW SHAPE -> PATH
   container
     .append('path')
     .datum(dataset) // datum() instead of data() path is 1 element, so have to join whole dataset to this element
