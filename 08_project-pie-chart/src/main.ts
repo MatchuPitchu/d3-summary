@@ -19,7 +19,6 @@ interface Dimensions {
 
 const draw = async (chartWrapperSelector: string) => {
   // [1] DATA
-  // array of objects of weather data
   const dataset = (await d3.csv<keyof DataItem>('./data/data.csv')) as Dataset;
   if (!dataset) return;
 

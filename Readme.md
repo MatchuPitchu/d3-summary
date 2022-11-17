@@ -438,6 +438,15 @@ const universeScale = d3
 
 ![](/00_slides/15_ordinal-scale.png)
 
+#### Band Scale
+
+- `d3.scaleBand()`: input `domain` is `discrete` AND output `range` is `contiuous`
+- allows to transform categorial data (e.g. given number of states like age groups) into numbers (e.g. width of a screen element)
+
+![](/00_slides/17_band-scale-1.png)
+
+![](/00_slides/18_band-scale-2.png)
+
 ### Axis
 
 > Documentation: <https://github.com/d3/d3-axis>
@@ -493,6 +502,13 @@ const universeScale = d3
 
 - use `d3.bin()` to group together your data into non-overlapping intervals
   - <https://github.com/d3/d3-array#bins>
+
+### Chart type: Bar Charts
+
+- `histograms` show a frequency of data
+- `bar charts` show individual points of data for comparison
+
+![](/00_slides/16_histogram-vs-bar-chart.png)
 
 ## Example of Scatterplot
 
