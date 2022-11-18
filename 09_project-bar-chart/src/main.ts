@@ -1,21 +1,19 @@
 import './style.css';
 import * as d3 from 'd3';
-import { SeriesPoint } from 'd3';
 
 type DataItem = {
   name: string;
-  '<10': string;
-  '10-19': string;
-  '20-29': string;
-  '30-39': string;
-  '40-49': string;
-  '50-59': string;
-  '60-69': string;
-  '70-79': string;
-  '≥80': string;
+  '<10': number;
+  '10-19': number;
+  '20-29': number;
+  '30-39': number;
+  '40-49': number;
+  '50-59': number;
+  '60-69': number;
+  '70-79': number;
+  '≥80': number;
+  total: number;
 };
-
-type Dataset = DataItem[] | undefined;
 
 interface Dimensions {
   width: number;
@@ -28,10 +26,14 @@ interface Dimensions {
 const draw = async (chartWrapperSelector: string) => {
   // [1] DATA
   // autoType() detects appropriate types for data
-  const dataset = await d3.csv<keyof DataItem>('./data/data.csv');
+  const dataset = await d3.csv('./data/data.csv', (rawRow, index, columns) => {
+    d3.autoType(rawRow); // coerces types to best fit (-> numbers in strings are coerced to numbers)
+    const total = d3.sum(columns, (column) => rawRow[column] as unknown as number); // summarize all population numbers
+    return { ...rawRow, total } as DataItem;
+  });
   if (!dataset) return;
 
-  const formattedData: Dataset = dataset.map((d) => d3.autoType(d));
+  dataset.sort((a, b) => b.total - a.total); // sort in descending order
 
   // [2] DIMENSIONS
   const dimensions: Dimensions = {
@@ -58,7 +60,7 @@ const draw = async (chartWrapperSelector: string) => {
   // constructs a new stack generator function
   // slice(1): "name" is on index 0 and NOT needed
   const stackGenerator = d3.stack<DataItem, string>().keys(dataset.columns.slice(1));
-  const stackData = stackGenerator(formattedData).map((ageGroup) => {
+  const stackData = stackGenerator(dataset).map((ageGroup) => {
     // add ageGroup.key property also to all sub arrays
     ageGroup.forEach((state: { [key: string]: any }) => (state.key = ageGroup.key));
     return ageGroup;
@@ -76,8 +78,11 @@ const draw = async (chartWrapperSelector: string) => {
 
   const xScale = d3
     .scaleBand<string>()
-    .domain(formattedData.map((state) => state.name)) // pass ALL discrete categories (-> "name") into input domain
-    .range([dimensions.margin, dimensions.containerWidth]);
+    .domain(dataset.map((state) => state.name)) // pass ALL discrete categories (-> "name") into input domain
+    .range([dimensions.margin, dimensions.containerWidth])
+    // .paddingInner(0.1)
+    // .paddingOuter(0.1)
+    .padding(0.1); // add padding (equal value for paddingInner/paddingOuter): 0.1 -> 10% of the bandwidth
 
   const colorScale = d3
     .scaleOrdinal() // can convert x group names into x colors
