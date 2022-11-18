@@ -541,6 +541,39 @@ const xScale = d3
 
 ![](/00_slides/16_histogram-vs-bar-chart.png)
 
+## Sketching
+
+- create a sketch to visualize the idea of your charts
+- helps identify which type of visualization is better for communicating your data
+- easy to communicate with coworkers and clients
+
+## Responsive Charts
+
+> Article about way to make `d3` charts responsive: <https://medium.com/@louisemoxy/a-simple-way-to-make-d3-js-charts-svgs-responsive-7afb04bc2e4b>
+
+- instead of setting hard coded `width` and `height`, use `viewBox` attribute on `svg` element
+- important: set NO fixed `width` at `svg` and parent element (-> wrapper container); `max-width: x px` or `width: x vw` are possible
+
+- `viewport`:
+  - it's the `width` and `height` attribute of the `svg` element
+  - if `viewport` is smaller than the `viewBox` of the `svg`, then you can only see a part of your `svg` chart
+  - it's like a `window` to your `svg` graphic
+- `viewBox`:
+  - sets coordinates of box -> `<x> <y> <width> <height>` (x/y set to `0` defines starting point at left top corner of box)
+  - if `width` and `height` of `viewBox` are smaller than `viewport` you are zooming in
+  - it's like a `telescope`: you can move to all directions and zoom-in if you like
+
+```TypeScript
+const svg = d3.select('#chart')
+  .append('svg')
+  .attr('height', 300)
+  .attr('width', 600)
+
+const svg = d3.select('#chart')
+  .append('svg')
+  .attr('viewBox', 0 0 300 600)
+```
+
 ## Example of Scatterplot
 
 ```TypeScript

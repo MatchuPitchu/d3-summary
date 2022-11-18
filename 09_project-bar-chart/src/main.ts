@@ -51,8 +51,9 @@ const draw = async (chartWrapperSelector: string) => {
   const svg = d3
     .select(chartWrapperSelector)
     .append('svg')
-    .attr('width', dimensions.width)
-    .attr('height', dimensions.height);
+    // .attr('width', dimensions.width)
+    // .attr('height', dimensions.height)
+    .attr('viewBox', `0 0 ${dimensions.width} ${dimensions.height}`);
 
   const container = svg.append('g').attr('transform', `translate(${dimensions.margin}, ${dimensions.margin})`);
 
