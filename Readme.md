@@ -5,6 +5,10 @@
   - makes it easy to identify certain patterns or disruptions in data
   - made up of shapes, size and color
 
+## D3 Examples of Charts
+
+> Gallery: <https://observablehq.com/@d3/gallery>
+
 ## D3 (Data Driven Documents)
 
 - helps to close gap between data and visualization on the web
